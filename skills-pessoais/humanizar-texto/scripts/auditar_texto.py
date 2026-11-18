@@ -13,6 +13,7 @@ nomes próprios, negações e modais do original sobrevivem à reescrita.
 Os resultados servem para orientar a leitura, não para a substituir.
 """
 
+import difflib
 import re
 import statistics
 import sys
@@ -158,6 +159,49 @@ def sem_citacoes(texto):
     return re.sub(r'["“«][^"”»\n]*["”»]', '""', texto)
 
 
+# --- Estrutura (R23–R27) ------------------------------------------------------
+
+STOP = {
+    "pt": set("para como mais pelo pela pelos pelas este esta estes estas isso isto aquele aquela "
+              "também entre sobre quando onde muito muita muitos muitas mesmo mesma ainda depois "
+              "antes sempre cada outro outra outros outras qualquer todos todas está estão foram "
+              "seus suas nosso nossa porque assim então".split()),
+    "en": set("that with this from they them their there these those have were been about which "
+              "would could should into than then also more most such some other very".split()),
+}
+DEFINICAO = {
+    "pt": r"^\s*(?:o|a|os|as)\s+[^,.;:]{2,60}?\s+(?:é|são)\s+(?:um|uma|uns|umas|o|a|os|as)\s",
+    "en": r"^\s*(?:the\s+|an?\s+)?[^,.;:]{2,60}?\s+(?:is|are)\s+(?:an?|the)\s",
+}
+FECHO_RECEITA = {
+    "pt": r"^\s*(?:por isso|assim|portanto|deste modo|em suma|em conclusão|em última análise|só assim|cabe a)\b|\b(?:exige|exigem|é preciso|é necessário|é fundamental|é essencial|devem|deve)\b",
+    "en": r"^\s*(?:therefore|thus|so|in conclusion|ultimately|only then)\b|\b(?:requires|must|should|it is essential|we need)\b",
+}
+
+
+def conteudo(frase, lang):
+    return {w.lower() for w in re.findall(r"[A-Za-zÀ-ÿ]{4,}", frase)} - STOP[lang]
+
+
+def proximidade(orig, novo, lang):
+    fo, fn = frases(orig), frases(novo)
+    co, cn = [conteudo(f, lang) for f in fo], [conteudo(f, lang) for f in fn]
+    def sim(a, b):
+        return len(a & b) / len(a | b) if a | b else 0.0
+    # para cada frase nova, a frase do original mais parecida
+    mapa = []
+    for b in cn:
+        melhores = sorted(((sim(a, b), i) for i, a in enumerate(co)), reverse=True)
+        s_, i = melhores[0] if melhores else (0.0, -1)
+        mapa.append((i + 1 if s_ >= 0.2 else None, s_))
+    def seq(a, b):  # semelhança sensível à ordem das palavras
+        return difflib.SequenceMatcher(None, re.findall(r"\w+", a.lower()), re.findall(r"\w+", b.lower())).ratio()
+    quase = sum(1 for a in fo if fn and max(seq(a, b) for b in fn) >= 0.7)
+    idx = [i for i, _ in mapa if i is not None]
+    mesma_ordem = len(fn) == len(fo) and idx == list(range(1, len(fo) + 1))
+    return fo, fn, mapa, quase, mesma_ordem
+
+
 # --- Métricas ---------------------------------------------------------------
 
 def medir(texto, lang):
@@ -208,6 +252,9 @@ def medir(texto, lang):
         "negrito_rotulo": contar(r"^\s*(?:[-*•]|\d+\.)\s+\*\*[^*\n]+?:?\*\*:?", texto, re.MULTILINE),
         "travessoes_100": 100 * texto.count("—") / n,
         "aberturas_repetidas": repetidas,
+        "frases_com_enumeracao": sum(1 for f in fs if re.search(rf"{item},\s{item},?\s{CONJ[lang]}\s", f, re.IGNORECASE)),
+        "abre_definicao": bool(fs) and bool(re.search(DEFINICAO[lang], fs[0], re.IGNORECASE)),
+        "fecha_receita": bool(fs) and bool(re.search(FECHO_RECEITA[lang], fs[-1], re.IGNORECASE)),
     }
 
 
@@ -231,6 +278,9 @@ def relatorio(nome, m):
     if m["negrito_rotulo"]:
         print(f"- Listas com rótulo a negrito: {m['negrito_rotulo']}  [R15]")
     print(f"- Travessões por 100 palavras: {m['travessoes_100']:.1f}")
+    print(f"- Frases com enumeração: {m['frases_com_enumeracao']} de {m['frases']}  [P11: ≤ ~1/3; R26]")
+    print(f"- Abre com uma definição: {'sim' if m['abre_definicao'] else 'não'}  [R23]")
+    print(f"- Acaba numa receita ou moral: {'sim' if m['fecha_receita'] else 'não'}  [R24, R25]")
     if m["aberturas_repetidas"]:
         ab = ", ".join(f"'{w}' ×{k}" for w, k in m["aberturas_repetidas"].items())
         print(f"- Parágrafos que abrem com a mesma palavra: {ab}  [R12]")
@@ -314,6 +364,19 @@ def comparar(orig, novo, lang):
                   f"(confirma que o sentido e o grau de certeza se mantêm)")
         else:
             print(f"- {rotulo.capitalize()}: {a} = {b}")
+
+    fo, fn, mapa, quase, mesma_ordem = proximidade(orig, novo, lang)
+    corr = ", ".join(f"{j}→{i if i else 'nova'}" for j, (i, _) in enumerate(mapa, 1))
+    print(f"\n## Distância ao original (P10)")
+    print(f"- Correspondência (frase nova → frase do original mais parecida): {corr}")
+    print(f"- Frases do original que ficaram quase iguais (≥ 70% de semelhança na sequência de palavras): {quase} de {len(fo)}")
+    if mesma_ordem or (fo and quase > len(fo) / 3):
+        alertas += 1
+        motivo = "mesmas frases pela mesma ordem" if mesma_ordem else "mais de 1/3 das frases quase iguais"
+        print(f"- ATENÇÃO, reescrita à superfície ({motivo}): em normal/profunda, volta a R23–R28, "
+              "a não ser que o original não tivesse molde")
+    else:
+        print("- A construção mudou (confirma no mapa que a ordem nova tem razão de ser)")
 
     print(f"\n{alertas} ponto(s) a verificar à mão." if alertas else "\nSem alertas automáticos. Lê na mesma.")
 

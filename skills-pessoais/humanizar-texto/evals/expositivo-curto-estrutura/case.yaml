@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: expositivo-curto-estrutura
+expected_outcome: |
+  A reescrita muda a construção do texto (ordem das ideias, abertura, fecho, enumerações), não só as palavras,
+  mantém todos os factos e a posição do autor sem acrescentar nada, explica as mudanças de estrutura nas notas
+  e não promete passar em detetores.

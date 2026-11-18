@@ -1,9 +1,9 @@
 ---
 name: humanizar-texto
-description: "Humaniza texto gerado por IA: limpa artefactos, varia ritmo e estrutura, tem modo académico e mantém os factos. Usa quando pedirem para humanizar ou tirar o tom de IA."
+description: "Humaniza texto gerado por IA: limpa artefactos, refaz a estrutura e o ritmo, tem modo académico e mantém os factos. Usa quando pedirem para humanizar ou tirar o tom de IA."
 compatibility: Claude Desktop / claude.ai e Claude Code. O script opcional scripts/auditar_texto.py precisa de Python 3 sem dependências; a skill funciona sem ele.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   idioma: pt-PT
 ---
 
@@ -20,16 +20,17 @@ Os cinco estudos em "Fontes" mostram o mesmo: a diferença entre texto de IA e t
 - **Liang et al. (2024)**: em 950 965 artigos científicos, palavras como *realm*, *intricate*, *showcasing* e *pivotal* dispararam a partir de 2023. Os autores sugerem que o texto gerado pode estar a uniformizar a escrita.
 - **Sadasivan et al. (2023/2025)**: a paráfrase recursiva engana detetores automáticos mas degrada o texto. Só 70% das paráfrases foram avaliadas como mantendo bem o conteúdo (mais 23% "em parte"), e a perplexidade subiu de 5,2 para 8,7–10,5 em cinco rondas. Os detetores também falham no sentido inverso: texto humano pode ser marcado como IA.
 - **Chakraborty et al. (2023)**: a deteção fica mais fácil quanto mais longo é o texto, porque cada regularidade se acumula. A diversidade humana é tão grande que não existe um único "estilo humano" a imitar.
+- **Russell, Rajendhran, Pham, Iyyer e Wieting (StoryScope, COLM 2026)**, em ficção: as características narrativas e discursivas, sem pistas de estilo, chegam a 93,2% de macro-F1 na deteção e retêm mais de 97% do desempenho dos modelos que também usam estilo. O texto de IA explica demais os temas, prefere enredos arrumados de uma só linha e escolhas morais menos ambíguas; o humano tem mais complexidade temporal (recuos, estrutura não linear) e mais diversidade. Estes achados vêm de um resumo do artigo, ainda por confirmar no texto completo (ver "Fontes").
 
-Consequência prática: **parafrasear não chega** (Russell, exp. 3), e reescrever em ciclo estraga o conteúdo (Sadasivan). O que funciona é diagnosticar os padrões, reescrever uma vez ajustando ao género e verificar factos e padrões no fim.
+Consequência prática: **parafrasear não chega** (Russell, exp. 3), e trocar palavras ou frases também não, porque a marca está na construção do texto: na ordem das ideias, no que se explica a mais e na pouca variação entre partes (StoryScope; Russell). Reescrever em ciclo estraga o conteúdo (Sadasivan). O que funciona é mapear a construção e os padrões, reescrever uma vez ajustando ao género e verificar no fim os factos, os padrões e a distância ao original.
 
 ## Fluxo de trabalho
 
 ### Passo 0: Enquadrar
 Identifica: **género** (email interno, notícia, resumo académico, post de blogue, relatório…), **leitor**, **registo** (formal/informal), **língua e variante** (PT-PT ≠ PT-BR, sem misturar; responde na língua do texto) e **intensidade** pedida:
-- `leve`: só vocabulário, fórmulas e formatação; a estrutura fica igual.
-- `normal` (por defeito): tudo o que está abaixo, mantendo a ordem geral das ideias.
-- `profunda`: pode reordenar parágrafos, fundir ou partir secções.
+- `leve`: só limpeza, vocabulário, fórmulas e formatação; a ordem e a construção ficam iguais.
+- `normal` (por defeito): tudo o que está abaixo, **incluindo a construção (R23–R29)**. Reordena, funde, parte e corta ideias quando o mapa do texto (Passo 2) mostrar um molde. Conserva-se o conteúdo e a posição do autor, não a sequência das frases.
+- `profunda`: além disso, pode reorganizar o argumento inteiro e refazer a divisão em parágrafos e secções.
 
 Se o género for académico (tese, artigo, resumo, relatório científico) ou o utilizador pedir tom académico, ativa também o **Modo académico** (secção própria), mesmo que o texto de partida seja coloquial.
 
@@ -54,18 +55,23 @@ Se puderes executar Python, começa por `python scripts/limpar_artefactos.py ent
 ### Passo 1: Inventário factual (interno)
 Antes de mexer, lista para ti cada unidade de conteúdo: números e unidades, datas, nomes de pessoas, instituições e lugares, relações de causa e efeito, comparações, **negações**, **grau de certeza** ("pode", "deverá", "cerca de", "sugere"), obrigações ("deve enviar") e citações literais. Separa as **avaliações sem facto** ("um marco crucial", "um futuro vibrante"): podem sair, mas ficam registadas nas notas.
 
-Reescreve sempre a partir do texto original e usa o inventário só como lista de verificação. Liang et al. geraram texto "tipo LLM" precisamente a partir de esboços de conteúdo, por isso reescrever só a partir de uma lista de pontos reproduz o estilo que queres evitar.
+Reescreve sempre a partir do texto original e usa o inventário só como lista de verificação. Liang et al. geraram texto "tipo LLM" precisamente a partir de esboços de conteúdo, por isso reescrever só a partir de uma lista de pontos reproduz o estilo que queres evitar. Partir do original também não quer dizer editar frase a frase, porque isso conserva o molde (Passo 3).
 
 ### Passo 2: Diagnóstico
-Percorre as regras R1–R21 e anota que padrões existem e onde. Russell et al. testaram várias formas de humanizar: "listar o que soa a IA e só depois editar" deu o melhor resultado, e encadear muitas chamadas de reescrita acrescentou traços de IA.
+Começa pelo **mapa do texto** (interno). Para cada frase, ou para cada parágrafo num texto longo, anota a função (definição, contexto, dado, exemplo, avaliação, tensão, posição do autor, receita, resumo) e se tem uma enumeração. Compara o mapa com os moldes de R23 e repara no peso que cada parte recebe (R26). Só depois percorre as regras R1–R21 e anota que padrões existem e onde.
+
+**Poucos marcadores não querem dizer texto humano.** No StoryScope, a construção sozinha quase iguala a deteção que usa estilo, e os especialistas de Russell guiavam-se também pela estrutura, pela originalidade e pelas conclusões. Um texto sem nenhuma palavra do glossário pode estar todo num molde de IA.
+
+Russell et al. testaram várias formas de humanizar: "listar o que soa a IA e só depois editar" deu o melhor resultado, e encadear muitas chamadas de reescrita acrescentou traços de IA.
 
 ### Passo 3: Reescrita
-Uma passagem completa, aplicando as regras com critério de género. Mexe primeiro na estrutura (abertura, fecho, densidade, ritmo) e só depois no vocabulário.
+Uma passagem completa, aplicando as regras com critério de género. Mexe por esta ordem: primeiro a construção (R23–R29: ordem das ideias, peso de cada parte, abertura e fecho, ligação entre frases), depois a densidade e o ritmo, e só no fim o vocabulário. Parte do mapa e do original, não da primeira frase: quem edita frase a frase acaba com o mesmo texto e palavras trocadas.
 
 ### Passo 4: Verificação
 1. **Factos:** confirma cada item do inventário no texto novo: mesmo valor, mesma unidade, mesma negação, mesmo grau de certeza (a única exceção são os ajustes de cautela do Modo académico, A3, sempre reportados), citações palavra a palavra. Confirma também que **não entrou nada novo**: nem adjetivos que acrescentam afirmações ("só para", "o primeiro"), nem causas, nem nomes. Se puderes executar Python, corre `python scripts/auditar_texto.py original.txt reescrito.txt` (na pasta desta skill). O script compara números, citações, nomes próprios, negações e modais e mede o ritmo. Não substitui a leitura.
 2. **Autoauditoria:** quem reescreve é também um modelo com *instruction tuning*, sujeito às mesmas tendências (Reinhart). Relê o teu texto à procura de marcadores do glossário, tríades, gerúndios encadeados, "não é X, é Y", travessões em série e fechos-resumo que tenhas introduzido.
-3. Corrige localmente. **Não reescrevas o texto todo outra vez** (R22).
+3. **Distância ao original:** faz o mapa da versão nova e compara-o com o do original. Em `normal` e `profunda`, a reescrita ficou à superfície se o mapa for igual (as mesmas funções pela mesma ordem) ou se a maioria das frases corresponder uma a uma às do original. Nesse caso volta a R23–R28 antes de entregar: estás a corrigir o Passo 3, não a fazer uma segunda reescrita (R22). Exceção: o original não tinha molde; diz isso nas notas. O `auditar_texto.py` mede esta distância quando recebe os dois textos (P10).
+4. Corrige localmente. **Não reescrevas o texto todo outra vez** (R22).
 
 ### Passo 5: Entrega
 Ver "Formato de entrega".
@@ -73,6 +79,53 @@ Ver "Formato de entrega".
 ## Regras
 
 Cada regra diz o achado que a sustenta. Os marcadores em português são **adaptações** dos achados (medidos em inglês), não medições diretas.
+
+### Construção do texto (aplica primeiro)
+
+Estas regras tratam a forma como as ideias se organizam: a ordem, o que se explica a mais, o peso de cada parte e a ligação entre frases. São elas que mudam a estrutura; as outras ajustam a superfície.
+
+**O que vem do StoryScope e o que fica de fora.** O StoryScope estuda ficção. Só transferem para não ficção os achados que têm apoio nos estudos de não ficção desta skill, sobretudo Russell et al. (artigos jornalísticos): explicar o tema em vez de o mostrar, a resolução arrumada, a linearidade e a pouca diversidade entre partes. Fica de fora tudo o que é próprio da narrativa: personagens e as suas escolhas morais, enredo e reviravoltas, diálogo, ponto de vista, finais. A complexidade temporal só entra como uma das opções de ordem (R23, "recuo"), sem força de regra, porque nenhum estudo de não ficção desta skill a mede.
+
+**R23 · Molde de exposição herdado.** *Achado:* em ficção, a IA prefere enredos lineares e arrumados, de uma só linha, e o texto humano tem mais complexidade temporal (StoryScope). Em não ficção, os especialistas de Russell apontam estruturas formulaicas, introduções genéricas que dizem do que o texto trata e conclusões que resumem. O equivalente não ficcional do enredo linear é o molde de manual: **definição → história → aplicações → "benefícios, mas desafios" → receita**. Outros moldes frequentes: contexto → problema → solução → conclusão otimista; pergunta retórica → resposta → resumo.
+*Faz:* se o mapa mostrar um molde, escolhe a ordem pelo que o leitor precisa primeiro, e não pela ordem do manual. Sem acrescentar factos, tens quatro saídas:
+- (a) abrir pelo dado mais concreto ou pela tensão que o texto já tem, e **recuar** depois para a definição ou o contexto;
+- (b) pôr a posição do autor à frente, como tese, com o motivo que o próprio texto dá;
+- (c) dissolver a definição numa oração ou num aposto dentro de outra frase, em vez de a deixar a abrir;
+- (d) juntar numa frase duas unidades que o texto já relaciona (causa e efeito, antes e agora).
+
+A ordem nova tem de ter uma razão: mudar por mudar cria outro molde (R12). Respeita os géneros de ordem fixa (resumo académico estruturado, ata, instruções passo a passo, relatório normalizado).
+> "A compostagem é a decomposição controlada de resíduos orgânicos. As autarquias começaram a promovê-la nos anos 90. Hoje, 40% das freguesias do concelho têm compostores comunitários." → "Hoje, 40% das freguesias do concelho têm compostores comunitários. As autarquias começaram a promover a compostagem, a decomposição controlada de resíduos orgânicos, nos anos 90." (abre no dado, recua para a história e dissolve a definição num aposto)
+
+**R24 · Explicar o tema em vez de o mostrar.** *Achado:* a IA explica demais os temas (StoryScope). Em não ficção, explica a mais, "diz em vez de mostrar" e fecha com resumos (Russell, clareza e conclusões).
+*Faz:* corta as frases que dizem ao leitor o que pensar do que acabou de ler ("Os benefícios são enormes", "Isto demonstra a importância de…", "Trata-se de um tema complexo") quando o facto já o mostra. Se a avaliação for a posição do autor, deixa-a uma vez, colada ao facto que a sustenta, e não como comentário à parte. Se não houver facto que a mostre, encurta-a e assinala em "A confirmar" que falta o dado.
+> "A taxa de abandono escolar caiu de 12% para 7% em três anos. Este resultado notável demonstra bem a importância das tutorias." → "As tutorias foram importantes para que a taxa de abandono escolar caísse de 12% para 7% em três anos." (a posição do autor fica, agarrada ao dado; "resultado notável" sai)
+
+**R25 · Tensão resolvida por receita.** *Achado:* em ficção, a IA prefere resoluções arrumadas e escolhas morais menos ambíguas (StoryScope). Em não ficção, as conclusões arrumam tudo com otimismo e o tom foge ao conflito (Russell). Transfere só a forma geral, porque aqui não há personagens a escolher: **"X traz benefícios, mas também desafios; por isso é preciso Y"**, com a tensão anunciada e resolvida na mesma passagem por uma receita genérica.
+*Faz:* separa a tensão da receita. Nomeia os desafios que o texto dá, sem os amortecer num "mas" simétrico. Se o autor propõe uma resposta, apresenta-a como posição dele, de preferência à frente (R23b) e com o motivo, e não como moral final. **Não acrescentes ambiguidade, objeções ou dúvidas que o texto não tem:** isso é conteúdo novo.
+> "O teletrabalho traz flexibilidade, mas também isolamento. Por isso, as empresas devem encontrar o equilíbrio certo." → "As empresas devem encontrar o equilíbrio certo no teletrabalho, porque ele traz flexibilidade e também isolamento."
+
+**R26 · Todas as partes com o mesmo peso.** *Achado:* o texto humano é mais diverso (StoryScope); a IA usa 1,9× mais coordenação de sintagmas (Reinhart) e listas sempre de três (Russell), e o texto gerado tende a uniformizar (Liang). Em não ficção, vê-se quando cada frase tem a mesma forma (um tópico e uma enumeração) e cada item recebe o mesmo espaço.
+*Faz:* dá pesos diferentes às partes. A unidade mais concreta, ou aquela sobre a qual o texto diz mais, ganha frase própria ou posição de destaque; as outras comprimem-se num aposto, numa oração ou numa lista curta. Com várias enumerações seguidas, deixa no máximo uma em forma de lista e distribui ou parte as outras. Mantém todos os itens (R4). Desenvolver quer dizer dar espaço ao que o texto já diz, nunca acrescentar.
+> "A biblioteca oferece empréstimo de livros, oficinas de escrita e acesso à internet. As oficinas de escrita têm lista de espera de dois meses." → "As oficinas de escrita da biblioteca têm lista de espera de dois meses. A biblioteca também empresta livros e dá acesso à internet."
+
+**R27 · Frases soltas, coladas por adição.** *Achado:* em não ficção, os especialistas de Russell apontam a falta de fluidez de frases condensadas que não se ligam; no StoryScope, o texto de IA segue uma só linha. O sinal é um texto em que cada frase recomeça o tópico ("Hoje, a IA…", "Os benefícios…") e podia trocar de lugar com a seguinte.
+*Faz:* liga as unidades pela relação que o texto já afirma. Funde frases quando a relação é direta, ou cria dependência com uma retoma (pronome, repetição do termo, continuação) em vez de recomeçar o tópico. Não inventes relações: "por isso", "porque" e "apesar de" são afirmações (A4).
+> "O museu reabriu em 2021. O museu tem 3 000 peças. As peças vêm de doações." → "Reaberto em 2021, o museu guarda 3 000 peças vindas de doações."
+
+**R28 · Reordenar, fundir, partir, cortar: quando e como.**
+
+| Operação | Quando | Como, sem perder factos |
+|---|---|---|
+| Reordenar | o mapa mostra um molde (R23) | escolhe a primeira unidade pelo interesse do leitor; verifica que nenhum "isto", "por isso" ou "assim" ficou a apontar para a frase errada |
+| Fundir | duas frases sobre a mesma unidade, ou causa e efeito separados (R27) | usa só a relação que o texto já afirma; confirma no inventário que nada ficou mais forte nem mais fraco |
+| Partir | uma frase com duas enumerações ou com duas ideias de peso diferente (R26) | cada parte leva o seu sujeito; os itens mantêm-se todos |
+| Cortar | repetições do mesmo facto, avaliações sem facto (R8, R24), transições e metacomentários, a frase-resumo final (R14) | nunca cortes factos, números, nomes, itens, ressalvas nem a posição do autor; tudo o que cortares vai para "Cortado por não ter facto" |
+
+> Cortar: "Neste contexto, importa referir que o prazo terminou a 30 de junho." → "O prazo terminou a 30 de junho."
+
+**R29 · Textos curtos e genéricos.** *Achado:* a escrita humana não ficcional tem afirmações específicas e verificáveis (Russell), e a diversidade humana é grande (Chakraborty; StoryScope). Num texto curto com poucos factos, quase tudo depende da construção e do que só o autor sabe.
+*Faz:* mesmo com menos de 150 palavras, em `normal` mexe pelo menos na abertura, no fecho e numa fusão ou partição. Nas notas, diz de forma concreta o que o autor pode acrescentar para o texto ser dele (um exemplo que conheça, um número com fonte, a sua posição), sob a forma de perguntas. Não metas nada disso no texto sem ele o dar.
+> Notas: "Para ser teu: que plataforma ou situação concreta tens em mente? Tens um número, com fonte, sobre o tempo de uso? Das medidas propostas, qual defendes mais?"
 
 ### A. Densidade e gramática
 
@@ -327,19 +380,39 @@ Ritmo: uma frase de 23 palavras seguida de uma de 9, com o método primeiro e a 
 
 Ritmo: quatro frases curtas e aditivas passam a uma frase de 20 palavras e outra de 10, ligadas por contraste.
 
+### Exemplo 7: construção de um texto expositivo curto (intensidade normal)
+
+**Antes (IA):**
+> As energias renováveis são fontes de energia que se regeneram naturalmente, como o sol, o vento e a água. Nas últimas décadas, a descida dos custos tornou-as cada vez mais competitivas. Em Portugal, já asseguram mais de metade da eletricidade consumida. Os benefícios são evidentes, mas persistem desafios como a intermitência, o armazenamento e o impacto na paisagem. Por isso, a transição energética exige planeamento, investimento e a participação de todos.
+
+**Mapa antes:** definição (enumeração) → história → dado → "benefícios, mas desafios" (enumeração) → receita (enumeração). É o molde de manual: três enumerações, cada frase recomeça o tópico e o texto acaba numa moral.
+
+**Depois:**
+> A transição energética exige planeamento e investimento, e também a participação de todos, porque persistem desafios como a intermitência, o armazenamento e o impacto na paisagem.
+>
+> Em Portugal, as energias renováveis já asseguram mais de metade da eletricidade consumida. A descida dos custos, nas últimas décadas, tornou cada vez mais competitivas estas fontes que se regeneram naturalmente, como o sol, o vento e a água.
+
+**Mapa depois:** posição do autor com o motivo → dado → história com a definição lá dentro.
+
+**Notas:**
+- Estrutura: a receita final passou a tese de abertura, com o motivo que o texto já dava (o "Por isso" passou a "porque") (R23b, R25). A definição deixou de abrir e ficou dissolvida na frase da história (R23c, R27). O dado de Portugal ganhou frase própria (R26). A enumeração da receita ficou partida em 2 + 1 (R26).
+- Factos: 5/5 (definição e exemplos: sol, vento, água · descida dos custos nas últimas décadas e competitividade crescente · mais de metade da eletricidade consumida em Portugal · desafios: intermitência, armazenamento, impacto na paisagem, com "como" a manter a lista aberta · a transição exige planeamento, investimento e participação de todos, por causa desses desafios).
+- Cortado por não ter facto: "Os benefícios são evidentes" (R24).
+
 ## Formato de entrega
 
 1. **O texto reescrito**, pronto a usar, no mesmo formato de base (email continua email, Markdown continua Markdown).
 2. **Notas da revisão** (curtas, na língua do utilizador):
    - `Factos: N/N mantidos` (e qualquer dúvida concreta).
    - As 3 a 6 mudanças principais, com o código da regra (ex.: "R14: conclusão-resumo cortada").
+   - `Estrutura:` o mapa antes e depois, numa linha cada (ex.: "definição → história → aplicações → benefícios/desafios → receita" passou a "dado → recuo à história → tensão com a posição do autor"), e as operações feitas (R23–R28).
    - `Cortado por não ter facto:` as avaliações que saíram, para o utilizador poder repor alguma.
    - `A confirmar:` nomes, citações ou números que parecem genéricos ou inventados (R16, R20) e pontos vagos onde um dado concreto ajudaria.
    - `Limpeza de artefactos:` o relatório do Passo 0B, por família (invisíveis, marcadores e links, formatação, frases de assistente), ou "nada a remover".
    - `Modo académico:` cada "Cautela ajustada: 'X' → 'Y'" (A3), os coloquialismos e hipérboles retirados, as afirmações sem fonte.
    - `Por preencher:` os espaços reservados encontrados ("[Nome]", "{{data}}").
 
-Se o utilizador pedir "só o texto", entrega só o texto. Se o texto já soar humano, diz isso e faz só ajustes mínimos: forçar mudanças pioraria o texto, e humanos também escrevem "crucial" (R7). No Claude Code, quando o texto vem de um ficheiro, grava a versão nova como `<nome>-humanizado.<ext>`, a menos que peçam para substituir. O original faz falta para a verificação.
+Se o utilizador pedir "só o texto", entrega só o texto. Se o texto já soar humano na construção e na superfície (o mapa do Passo 2 não mostra molde nem partes com o mesmo peso), diz isso e faz só ajustes mínimos: forçar mudanças pioraria o texto, e humanos também escrevem "crucial" (R7). A falta de marcadores, sozinha, não chega para concluir isto. No Claude Code, quando o texto vem de um ficheiro, grava a versão nova como `<nome>-humanizado.<ext>`, a menos que peçam para substituir. O original faz falta para a verificação.
 
 Nunca mexas em: código, fórmulas, dados de tabelas, citações literais, termos jurídicos ou técnicos com sentido fixo, nomes próprios.
 
@@ -358,13 +431,16 @@ São escolhas operacionais desta skill para pôr em prática os achados, **não*
 | P7 | Reescritas completas (R22) | 1, depois só correções locais |
 | P8 | Modo académico: frases curtas (≤ 12 palavras) e longas (> 30) (A7) | pelo menos 1 curta em cada parágrafo de 4+ frases; no máximo 2 longas seguidas |
 | P9 | Travessões (R21, Passo 0B) | ≤ 1 por ~150 palavras, nunca um por parágrafo como padrão |
+| P10 | Distância ao original em `normal`/`profunda` (Passo 4, R23) | se havia molde, o mapa muda; no máximo 1/3 das frases quase iguais às do original (≥ 70% de semelhança na sequência de palavras) |
+| P11 | Frases com enumeração (R26) | no máximo cerca de 1 em cada 3 |
 
 ## Limites
 
 - **Detetores:** esta skill não garante passar em detetores e não deve ser apresentada assim. Os detetores falham nos dois sentidos (Sadasivan). Em textos longos a deteção continua possível (Chakraborty), e especialistas humanos apanharam artigos "humanizados" por prompt (Russell).
 - **Marcas d'água:** a limpeza de artefactos (Passo 0B) retira marcas visíveis ou textuais deixadas pela geração. Não inclui técnicas para anular marcas d'água estatísticas ou criptográficas de proveniência, nem serve para esconder que um texto foi gerado com IA.
 - **Autoria:** quando o contexto exige declarar o uso de IA (regras académicas, editoriais, profissionais), a reescrita não substitui essa declaração.
-- **Evidência:** os estudos analisam sobretudo inglês americano e modelos de 2023–2025 (GPT-3.5/4o, o1-pro, Claude 3.5 Sonnet, Llama 2/3). Os equivalentes portugueses e os parâmetros P1–P7 são adaptações a validar com os evals da skill.
+- **Evidência:** os estudos analisam sobretudo inglês americano e modelos de 2023–2025 (GPT-3.5/4o, o1-pro, Claude 3.5 Sonnet, Llama 2/3). Os equivalentes portugueses e os parâmetros P1–P11 são adaptações a validar com os evals da skill. O StoryScope analisa ficção: os seus achados entram por analogia e só onde há apoio em não ficção (ver "Construção do texto").
+- **Textos curtos e genéricos:** com poucos factos, a reescrita pode mudar a construção mas não a falta de especificidade. Só o autor pode juntar exemplos, números com fonte e a sua posição (R29). Também aqui não há promessa sobre detetores.
 
 ## Fontes
 
@@ -373,5 +449,6 @@ São escolhas operacionais desta skill para pôr em prática os achados, **não*
 3. Liang, W., Zhang, Y., Wu, Z., Lepp, H., Ji, W., Zhao, X., Cao, H., Liu, S., He, S., Huang, Z., Yang, D., Potts, C., Manning, C. D., & Zou, J. Y. (2024). *Mapping the Increasing Use of LLMs in Scientific Papers.* arXiv:2404.01268. https://arxiv.org/abs/2404.01268
 4. Sadasivan, V. S., Kumar, A., Balasubramanian, S., Wang, W., & Feizi, S. (2023, v4 2025). *Can AI-Generated Text be Reliably Detected?* arXiv:2303.11156. https://arxiv.org/abs/2303.11156 · Código: https://github.com/vinusankars/Reliability-of-AI-text-detectors
 5. Chakraborty, S., Bedi, A. S., Zhu, S., An, B., Manocha, D., & Huang, F. (2023). *On the Possibilities of AI-Generated Text Detection.* arXiv:2304.04736. https://arxiv.org/abs/2304.04736
+6. Russell, Rajendhran, Pham, Iyyer e Wieting (2026). *StoryScope: Investigating idiosyncrasies in AI fiction.* COLM 2026 (Google DeepMind e Universidade de Maryland). Os achados usados nesta skill vêm de um resumo do artigo; o PDF não foi lido na revisão 1.2.0. Falta o link e confirmar os números no texto completo.
 
 Para instalar, testar e otimizar esta skill (Claude Desktop e Claude Code), vê `MANUTENCAO.md`.

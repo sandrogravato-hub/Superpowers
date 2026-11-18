@@ -6,10 +6,10 @@ Este ficheiro é para quem mantém a skill. O Claude não precisa dele para a us
 
 | Ficheiro | Para quê |
 |---|---|
-| `SKILL.md` | Instruções que o Claude segue: fluxo (com a limpeza de artefactos), regras R1–R22, Modo académico A1–A7, glossário, exemplos, parâmetros P1–P9, fontes |
+| `SKILL.md` | Instruções que o Claude segue: fluxo (com a limpeza de artefactos e o mapa do texto), regras de construção R23–R29, regras de superfície R1–R22, Modo académico A1–A7, glossário, exemplos, parâmetros P1–P11, fontes |
 | `scripts/limpar_artefactos.py` | Limpeza opcional (Passo 0B): remove caracteres invisíveis, espaços anómalos, marcadores de ferramenta e parâmetros de rastreio, e lista frases de assistente, espaços reservados e formatação a rever |
-| `scripts/auditar_texto.py` | Verificação opcional (Python 3, sem dependências): ritmo, marcadores e comparação de factos entre original e reescrita |
-| `evals/` | 6 casos de teste para medir a skill antes e depois de cada alteração (não entram no pacote `.skill`) |
+| `scripts/auditar_texto.py` | Verificação opcional (Python 3, sem dependências): ritmo, marcadores, sinais de molde (abertura de definição, fecho de receita, frases com enumeração), comparação de factos e distância ao original (P10) |
+| `evals/` | 7 casos de teste para medir a skill antes e depois de cada alteração (não entram no pacote `.skill`) |
 | `MANUTENCAO.md` | Este guia |
 
 ## Instalar
@@ -41,5 +41,6 @@ python ~/.claude/skills/humanizar-texto/scripts/auditar_texto.py original.txt re
 
 ## Histórico
 
+- **1.2.0 (2026-11-18):** construção do texto. Mapa do texto no Passo 2; regras R23–R29 (molde de exposição, explicar o tema, tensão resolvida por receita, partes com o mesmo peso, frases coladas por adição, reordenar/fundir/partir/cortar, textos curtos e genéricos); intensidade `normal` passa a incluir a construção; verificação de distância ao original (P10) e frases com enumeração (P11); a ausência de marcadores deixa de contar como sinal de texto humano; exemplo 7; caso de teste `expositivo-curto-estrutura`. Motivo: num texto expositivo de ~100 palavras, a 1.1.0 devolvia quase o mesmo texto. Os achados do StoryScope entraram a partir de um resumo: **falta ler o PDF e confirmar os números e a referência**.
 - **1.1.0 (2026-11-18):** Modo académico (A1–A7), Passo 0B de limpeza de artefactos com o script `limpar_artefactos.py`, exemplos 4–6, parâmetros P8–P9, nota sobre marcas d'água nos Limites, descrição encurtada para menos de 200 caracteres e caso de teste `limpeza-tom-academico`.
 - **1.0.0 (2026-11-18):** versão inicial, baseada em Reinhart et al. (2025), Russell et al. (2025), Liang et al. (2024), Sadasivan et al. (2023/2025) e Chakraborty et al. (2023).
