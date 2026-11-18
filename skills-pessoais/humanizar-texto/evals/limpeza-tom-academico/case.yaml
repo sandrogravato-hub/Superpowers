@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: limpeza-tom-academico
+expected_outcome: |
+  O texto sai sem caracteres invisíveis, marcadores de ferramenta, parâmetros de rastreio, emojis nem frases de assistente,
+  em registo académico, com ritmo variado e os mesmos factos; a afirmação causal fica atenuada e a resposta reporta o que foi removido.

@@ -6,9 +6,10 @@ Este ficheiro é para quem mantém a skill. O Claude não precisa dele para a us
 
 | Ficheiro | Para quê |
 |---|---|
-| `SKILL.md` | Instruções que o Claude segue: fluxo, regras R1–R22, glossário, exemplos, parâmetros P1–P7, fontes |
+| `SKILL.md` | Instruções que o Claude segue: fluxo (com a limpeza de artefactos), regras R1–R22, Modo académico A1–A7, glossário, exemplos, parâmetros P1–P9, fontes |
+| `scripts/limpar_artefactos.py` | Limpeza opcional (Passo 0B): remove caracteres invisíveis, espaços anómalos, marcadores de ferramenta e parâmetros de rastreio, e lista frases de assistente, espaços reservados e formatação a rever |
 | `scripts/auditar_texto.py` | Verificação opcional (Python 3, sem dependências): ritmo, marcadores e comparação de factos entre original e reescrita |
-| `evals/` | 5 casos de teste para medir a skill antes e depois de cada alteração (não entram no pacote `.skill`) |
+| `evals/` | 6 casos de teste para medir a skill antes e depois de cada alteração (não entram no pacote `.skill`) |
 | `MANUTENCAO.md` | Este guia |
 
 ## Instalar
@@ -40,4 +41,5 @@ python ~/.claude/skills/humanizar-texto/scripts/auditar_texto.py original.txt re
 
 ## Histórico
 
+- **1.1.0 (2026-11-18):** Modo académico (A1–A7), Passo 0B de limpeza de artefactos com o script `limpar_artefactos.py`, exemplos 4–6, parâmetros P8–P9, nota sobre marcas d'água nos Limites, descrição encurtada para menos de 200 caracteres e caso de teste `limpeza-tom-academico`.
 - **1.0.0 (2026-11-18):** versão inicial, baseada em Reinhart et al. (2025), Russell et al. (2025), Liang et al. (2024), Sadasivan et al. (2023/2025) e Chakraborty et al. (2023).
