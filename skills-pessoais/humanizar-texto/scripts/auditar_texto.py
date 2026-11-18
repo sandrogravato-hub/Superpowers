@@ -179,6 +179,15 @@ FECHO_RECEITA = {
 }
 
 
+RELACOES = {
+    "pt": [r"graças a\w*", r"porque", r"por isso", r"devido a\w*", r"por causa d\w*",
+           r"tornou possíve\w+", r"tornaram possíve\w+", r"permiti\w+", r"lev\w+ a", r"result\w+",
+           r"caus\w+", r"explic\w+", r"deve-se", r"consequ\w+", r"daí que", r"possibilit\w+"],
+    "en": [r"because", r"therefore", r"thanks to", r"due to", r"led to", r"enabl\w+", r"allow\w+",
+           r"caus\w+", r"explain\w*", r"as a result", r"made possible"],
+}
+
+
 def conteudo(frase, lang):
     return {w.lower() for w in re.findall(r"[A-Za-zÀ-ÿ]{4,}", frase)} - STOP[lang]
 
@@ -364,6 +373,18 @@ def comparar(orig, novo, lang):
                   f"(confirma que o sentido e o grau de certeza se mantêm)")
         else:
             print(f"- {rotulo.capitalize()}: {a} = {b}")
+
+    novas = []
+    for pad in RELACOES[lang]:
+        k_o = len(re.findall(r"\b" + pad + r"\b", orig, re.IGNORECASE))
+        k_n = len(re.findall(r"\b" + pad + r"\b", novo, re.IGNORECASE))
+        if k_n > k_o:
+            exemplo = re.search(r"\b" + pad + r"\b", novo, re.IGNORECASE).group(0)
+            novas.append(f"{exemplo} ({k_o}→{k_n})")
+    if novas:
+        alertas += 1
+        print(f"- Verificar relações novas (causa, consequência, força): {', '.join(novas)}. "
+              "Confirma que o original as afirmava com a mesma força.")
 
     fo, fn, mapa, quase, mesma_ordem = proximidade(orig, novo, lang)
     corr = ", ".join(f"{j}→{i if i else 'nova'}" for j, (i, _) in enumerate(mapa, 1))
