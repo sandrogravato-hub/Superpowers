@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: texto-ja-humano
+expected_outcome: |
+  A resposta reconhece que o texto já soa escrito por uma pessoa e faz no máximo ajustes mínimos, sem mudar factos nem o tom pessoal.

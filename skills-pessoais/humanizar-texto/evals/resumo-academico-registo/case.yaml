@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: resumo-academico-registo
+expected_outcome: |
+  O resumo reescrito continua académico (sem coloquialismos nem primeira pessoa do singular), mantém atenuadores, todos os números e controlos estatísticos, conserva pelo menos uma construção passiva ou impessoal e elimina os marcadores de IA.

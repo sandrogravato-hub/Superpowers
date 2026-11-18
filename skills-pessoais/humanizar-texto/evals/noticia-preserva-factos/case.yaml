@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: noticia-preserva-factos
+expected_outcome: |
+  O texto reescrito mantém todos os factos (datas, números, citação literal, nomes, quantificadores), corta abertura e fecho formulaicos e avaliações sem facto, e varia o ritmo das frases, em português europeu.

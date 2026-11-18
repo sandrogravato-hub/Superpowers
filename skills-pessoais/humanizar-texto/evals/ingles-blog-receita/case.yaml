@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ingles-blog-receita
+expected_outcome: |
+  The rewritten post stays in English, keeps every quantity, temperature, time and family detail, drops the AI vocabulary and formulas, ends without a summary and varies sentence length.
